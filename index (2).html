@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The DM's Grimoire</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=IM+Fell+English:ital@0;1&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --parchment: #f4e8c1;
+    --parchment-dark: #e8d5a3;
+    --parchment-deeper: #d4b896;
+    --ink: #2c1810;
+    --ink-faded: #5c3d2e;
+    --ink-light: #7a5c4a;
+    --red-wax: #8b1a1a;
+    --gold: #c9972a;
+    --gold-light: #e8b84b;
+    --border-ornate: #9a7a4a;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #1a0f08;
+    background-image:
+      radial-gradient(ellipse at 20% 20%, #2a1505 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 80%, #1a0800 0%, transparent 60%);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px 40px;
+    font-family: 'Crimson Text', Georgia, serif;
+  }
+
+  .grimoire-title {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  .grimoire-title h1 {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(22px, 4vw, 36px);
+    color: var(--gold-light);
+    letter-spacing: 0.12em;
+    text-shadow: 0 0 20px rgba(201,151,42,0.5), 0 2px 4px rgba(0,0,0,0.8);
+    font-weight: 700;
+  }
+  .grimoire-title .subtitle {
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    color: var(--parchment-deeper);
+    font-size: 14px;
+    letter-spacing: 0.06em;
+    margin-top: 4px;
+    opacity: 0.8;
+  }
+  .rune-divider {
+    color: var(--gold);
+    font-size: 18px;
+    letter-spacing: 8px;
+    opacity: 0.7;
+    margin: 6px 0;
+  }
+
+  .parchment {
+    background: var(--parchment);
+    background-image:
+      linear-gradient(135deg, #f8eecf 0%, #f0dfa8 30%, #e8d090 60%, #f2e4b0 100%);
+    border: 2px solid var(--border-ornate);
+    border-radius: 4px;
+    width: 100%;
+    max-width: 780px;
+    box-shadow:
+      0 0 0 1px rgba(154,122,74,0.3),
+      0 8px 40px rgba(0,0,0,0.7),
+      inset 0 0 60px rgba(180,130,60,0.15);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .parchment::before, .parchment::after {
+    content: '✦';
+    position: absolute;
+    color: var(--border-ornate);
+    font-size: 20px;
+    opacity: 0.5;
+  }
+  .parchment::before { top: 8px; left: 12px; }
+  .parchment::after { top: 8px; right: 12px; }
+
+  /* Proxy URL setup banner */
+  .setup-banner {
+    background: rgba(139,26,26,0.08);
+    border-bottom: 1px solid rgba(139,26,26,0.15);
+    padding: 14px 28px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .setup-banner.connected {
+    background: rgba(74,122,42,0.08);
+    border-bottom-color: rgba(74,122,42,0.15);
+  }
+  .setup-label {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--ink-faded);
+    white-space: nowrap;
+  }
+  .proxy-input {
+    flex: 1;
+    min-width: 200px;
+    background: rgba(255,255,255,0.4);
+    border: 1px solid var(--parchment-deeper);
+    border-radius: 3px;
+    padding: 7px 12px;
+    font-family: 'Crimson Text', serif;
+    font-size: 13px;
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .proxy-input:focus { border-color: var(--gold); }
+  .proxy-input::placeholder { color: var(--ink-light); font-style: italic; font-size: 12px; }
+  .proxy-status { font-size: 12px; font-style: italic; color: var(--ink-light); white-space: nowrap; }
+  .proxy-status.ok { color: #4a7a2a; font-weight: 600; }
+  .proxy-status.err { color: var(--red-wax); }
+
+  .chat-scroll {
+    height: 420px;
+    overflow-y: auto;
+    padding: 24px 28px 12px;
+    scroll-behavior: smooth;
+    scrollbar-width: thin;
+    scrollbar-color: var(--parchment-deeper) transparent;
+  }
+  .chat-scroll::-webkit-scrollbar { width: 6px; }
+  .chat-scroll::-webkit-scrollbar-thumb { background: var(--parchment-deeper); border-radius: 3px; }
+
+  .message { margin-bottom: 20px; animation: fadeIn 0.3s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+  .message.user { text-align: right; }
+  .message.assistant { text-align: left; }
+
+  .msg-label {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: var(--ink-light);
+    margin-bottom: 5px;
+    text-transform: uppercase;
+  }
+  .message.user .msg-label { color: var(--red-wax); }
+
+  .msg-bubble {
+    display: inline-block;
+    max-width: 85%;
+    padding: 12px 16px;
+    border-radius: 2px;
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--ink);
+    text-align: left;
+  }
+  .message.assistant .msg-bubble {
+    background: rgba(255,255,255,0.35);
+    border: 1px solid rgba(154,122,74,0.25);
+    border-left: 3px solid var(--gold);
+  }
+  .message.user .msg-bubble {
+    background: rgba(139,26,26,0.08);
+    border: 1px solid rgba(139,26,26,0.2);
+    border-right: 3px solid var(--red-wax);
+  }
+  .msg-bubble img { max-width: 100%; border-radius: 3px; margin-top: 8px; display: block; border: 1px solid var(--parchment-deeper); }
+
+  .typing-dots { display: flex; gap: 5px; padding: 4px 0; }
+  .typing-dots span {
+    width: 7px; height: 7px;
+    background: var(--gold);
+    border-radius: 50%;
+    animation: bounce 1.2s infinite;
+  }
+  .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes bounce { 0%,80%,100% { transform: translateY(0); opacity:0.5; } 40% { transform: translateY(-6px); opacity:1; } }
+
+  .notes-panel {
+    border-top: 1px dashed var(--parchment-deeper);
+    padding: 14px 28px;
+    display: none;
+  }
+  .notes-panel.visible { display: block; }
+  .notes-label {
+    font-family: 'Cinzel', serif;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--gold);
+    margin-bottom: 8px;
+  }
+  .notes-area {
+    width: 100%;
+    min-height: 90px;
+    background: rgba(255,255,255,0.3);
+    border: 1px solid var(--parchment-deeper);
+    border-radius: 2px;
+    padding: 10px 12px;
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    font-size: 14px;
+    color: var(--ink);
+    resize: vertical;
+    outline: none;
+    line-height: 1.7;
+  }
+  .notes-area:focus { border-color: var(--gold); }
+
+  .input-area {
+    border-top: 1px solid var(--parchment-deeper);
+    padding: 16px 28px 20px;
+  }
+  .input-row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+  }
+  .text-input {
+    flex: 1;
+    background: rgba(255,255,255,0.45);
+    border: 1px solid var(--parchment-deeper);
+    border-radius: 3px;
+    padding: 10px 14px;
+    font-family: 'Crimson Text', serif;
+    font-size: 16px;
+    color: var(--ink);
+    resize: none;
+    min-height: 44px;
+    max-height: 120px;
+    outline: none;
+    transition: border-color 0.2s;
+    line-height: 1.5;
+  }
+  .text-input:focus { border-color: var(--gold); box-shadow: 0 0 0 2px rgba(201,151,42,0.12); }
+  .text-input::placeholder { color: var(--ink-light); font-style: italic; }
+
+  .btn {
+    background: var(--ink);
+    color: var(--gold-light);
+    border: 1px solid var(--gold);
+    border-radius: 3px;
+    padding: 10px 18px;
+    font-family: 'Cinzel', serif;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    height: 44px;
+  }
+  .btn:hover { background: #3d1f0e; box-shadow: 0 0 10px rgba(201,151,42,0.25); }
+  .btn:active { transform: scale(0.97); }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--ink-faded);
+    border: 1px solid var(--parchment-deeper);
+    border-radius: 3px;
+    padding: 6px 12px;
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .btn-ghost:hover { border-color: var(--gold); color: var(--ink); }
+
+  .toolbar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .toolbar-label {
+    font-family: 'Cinzel', serif;
+    font-size: 10px;
+    color: var(--ink-light);
+    letter-spacing: 0.08em;
+  }
+
+  .img-preview { position: relative; display: inline-block; margin-bottom: 10px; }
+  .img-preview img { height: 64px; border-radius: 3px; border: 1px solid var(--parchment-deeper); display: block; }
+  .img-preview .remove-img {
+    position: absolute; top: -6px; right: -6px;
+    background: var(--red-wax); color: white;
+    border: none; border-radius: 50%;
+    width: 18px; height: 18px; font-size: 11px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+  }
+
+  #emptyState {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    height: 100%;
+  }
+  .welcome { text-align: center; padding: 12px 0 4px; }
+  .welcome .dragon { font-size: 36px; margin-bottom: 8px; }
+  .welcome p {
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    color: var(--ink-faded);
+    font-size: 15px; line-height: 1.6;
+  }
+
+  .ornament-line {
+    text-align: center;
+    color: var(--border-ornate);
+    opacity: 0.4;
+    font-size: 13px;
+    letter-spacing: 6px;
+    padding: 4px 0 0;
+  }
+
+  @media (max-width: 500px) {
+    .setup-banner, .input-area, .notes-panel { padding-left: 16px; padding-right: 16px; }
+    .chat-scroll { height: 340px; padding: 16px 16px 8px; }
+    .msg-bubble { max-width: 95%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="grimoire-title">
+  <div class="rune-divider">⚔ ✦ ⚔</div>
+  <h1>The DM's Grimoire</h1>
+  <div class="subtitle">A magical companion for first-time Dungeon Masters</div>
+  <div class="rune-divider">⚔ ✦ ⚔</div>
+</div>
+
+<div class="parchment">
+
+  <!-- Proxy URL input (you set this once) -->
+  <div class="setup-banner" id="setupBanner">
+    <span class="setup-label">✦ Proxy Scroll</span>
+    <input class="proxy-input" type="text" id="proxyUrl"
+      placeholder="Paste your Apps Script Web App URL here…"
+      oninput="checkProxy()" />
+    <span class="proxy-status" id="proxyStatus">Awaiting the scroll URL</span>
+  </div>
+
+  <!-- Chat -->
+  <div class="chat-scroll" id="chatScroll">
+    <div id="emptyState">
+      <div class="welcome">
+        <div class="dragon">🐉</div>
+        <p>Welcome, Dungeon Master!<br>Paste your proxy scroll URL above,<br>then tell me about your campaign.</p>
+      </div>
+    </div>
+    <div id="messages"></div>
+  </div>
+
+  <div class="ornament-line">· · · · ·</div>
+
+  <!-- Session Notes -->
+  <div class="notes-panel" id="notesPanel">
+    <div class="notes-label">✦ Campaign Journal — copy these notes to paste at the start of your next session</div>
+    <textarea class="notes-area" id="notesArea" placeholder="Your session notes will appear here…"></textarea>
+  </div>
+
+  <!-- Input -->
+  <div class="input-area">
+    <div class="toolbar">
+      <span class="toolbar-label">Tools:</span>
+      <button class="btn-ghost" onclick="document.getElementById('imgUpload').click()">📜 Upload drawing</button>
+      <input type="file" id="imgUpload" accept="image/*" style="display:none" onchange="handleImage(event)">
+      <button class="btn-ghost" onclick="saveNotes()">📖 Save session notes</button>
+      <button class="btn-ghost" onclick="clearChat()">🕯 New quest</button>
+    </div>
+    <div id="imgPreviewWrap"></div>
+    <div class="input-row">
+      <textarea class="text-input" id="userInput"
+        placeholder="What are you working on today, DM? Tell me about your campaign…"
+        rows="1"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage();}"
+        oninput="autoResize(this)"></textarea>
+      <button class="btn" id="sendBtn" onclick="sendMessage()">Cast ✦</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ============================================================
+// CONFIGURATION
+// After deploying your Apps Script, paste the Web App URL
+// directly here so users don't have to enter it manually:
+// ============================================================
+const HARDCODED_PROXY_URL = 'https://script.google.com/macros/s/AKfycbwzb-Xv3sOnJPfkacVJxQ0A5PT0vfX24qo22hvskrHgoMSJkEAnqTMDIzQ5dr52Gqr4/exec';
+
+const SYSTEM_PROMPT = `You are a Dungeon Master's Companion — a creative guide, rules helper, and world-building partner built specifically for a young person who is running their very first D&D campaign.
+
+Your role is NOT to make decisions for them or generate everything from scratch. Instead, you draw out their ideas with curious, enthusiastic questions and then help them develop what they've imagined. Think of yourself as a wise, encouraging mentor sitting across the table from them.
+
+== YOUR PERSONALITY ==
+- Warm, enthusiastic, and encouraging — like a cool older friend who loves D&D
+- Curious about their ideas above everything else
+- Treat them as a capable, creative person — never condescending
+- Use clear, friendly language. Explain rules simply without being boring.
+- Occasionally use fun D&D flavor in your language ("roll for creativity!", "critical hit of an idea!")
+
+== HOW YOU RESPOND ==
+1. Always start by asking what THEY have in mind before offering suggestions
+2. When they give you an idea, reflect it back with excitement and ask a follow-up question that deepens it
+3. Only offer concrete content (names, stats, descriptions) AFTER they have given you a seed idea to build from
+4. Keep answers focused — offer 2-3 choices max, or ask a question instead
+5. Remember what they have told you earlier in the conversation
+
+== WHAT YOU CAN HELP WITH ==
+
+[RULES & MECHANICS] Explaining D&D 5e rules simply. Running combat fairly. Encounter balancing in plain terms. Handling players who go off-script. When to call for skill checks.
+
+[MONSTER & NPC BUILDING] Help design monsters starting from THEIR visual ideas. Ask about personality, what it wants, how it moves. Generate stat blocks appropriate to the party level. Create NPC backstories rooted in their world.
+
+[WORLD BUILDING] Ask questions to help build their map, towns, factions, and history. Help think about cause-and-effect. Suggest how to make locations feel alive.
+
+[STORY & BACKSTORY] Help develop plot hooks from ideas they share. Create backstory for villains and heroes — but always ask first. Help write dramatic moments and scene descriptions.
+
+[SESSION PREP] Help prep for the next session. Remind them of loose ends. Help improvise when players do the unexpected.
+
+== WHEN THEY UPLOAD A DRAWING ==
+If they share a drawing of a character, monster, map, or item:
+1. Describe what you see with enthusiasm and specific detail
+2. Ask them to tell you about it — name, personality, abilities, role in their story
+3. Use what they share to help build stats, lore, or descriptions
+4. Ask if they want a vivid description they could read aloud at the table
+
+== WHAT YOU NEVER DO ==
+- Never make major world or story decisions FOR them without asking
+- Never overwhelm with walls of text — keep responses in short paragraphs
+- Never assume they know a rule — always offer to explain
+- Never dismiss a creative idea — find the "yes, and" in every concept
+
+Start the very first message by warmly welcoming them and asking what they're working on today and where their last session left off. Keep it short and inviting.`;
+
+let messages = [];
+let pendingImage = null;
+let proxyUrl = HARDCODED_PROXY_URL;
+
+// On load — if URL is hardcoded, hide the input and go
+window.addEventListener('load', () => {
+  if (HARDCODED_PROXY_URL) {
+    document.getElementById('setupBanner').style.display = 'none';
+    kickoffWelcome();
+  }
+});
+
+function checkProxy() {
+  const val = document.getElementById('proxyUrl').value.trim();
+  const status = document.getElementById('proxyStatus');
+  const banner = document.getElementById('setupBanner');
+  if (val.startsWith('https://script.google.com/macros/')) {
+    proxyUrl = val;
+    status.textContent = '✦ Scroll connected';
+    status.className = 'proxy-status ok';
+    banner.className = 'setup-banner connected';
+    if (messages.length === 0) kickoffWelcome();
+  } else if (val.length > 0) {
+    status.textContent = 'Check the URL — should start with script.google.com/macros/';
+    status.className = 'proxy-status err';
+  } else {
+    status.textContent = 'Awaiting the scroll URL';
+    status.className = 'proxy-status';
+  }
+}
+
+async function kickoffWelcome() {
+  document.getElementById('emptyState').style.display = 'none';
+  await callProxy([{ role: 'user', content: 'Hello! I just opened the DM Grimoire. Please give me your warm welcome message.' }], true);
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function handleImage(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    pendingImage = { data: ev.target.result.split(',')[1], mediaType: file.type, src: ev.target.result };
+    const wrap = document.getElementById('imgPreviewWrap');
+    wrap.innerHTML = `<div class="img-preview"><img src="${ev.target.result}"><button class="remove-img" onclick="clearImage()">×</button></div>`;
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+}
+
+function clearImage() {
+  pendingImage = null;
+  document.getElementById('imgPreviewWrap').innerHTML = '';
+}
+
+async function sendMessage() {
+  const input = document.getElementById('userInput');
+  const text = input.value.trim();
+  if (!text && !pendingImage) return;
+  if (!proxyUrl) { alert('Please paste your Apps Script proxy URL first.'); return; }
+
+  const userContent = [];
+  let previewHtml = '';
+
+  if (pendingImage) {
+    userContent.push({ type: 'image', source: { type: 'base64', media_type: pendingImage.mediaType, data: pendingImage.data } });
+    previewHtml = `<img src="${pendingImage.src}">`;
+    clearImage();
+  }
+  if (text) userContent.push({ type: 'text', text });
+
+  const msgContent = userContent.length === 1 && userContent[0].type === 'text' ? text : userContent;
+  addMessage('user', text, previewHtml);
+  input.value = '';
+  input.style.height = 'auto';
+
+  messages.push({ role: 'user', content: msgContent });
+  await callProxy(messages);
+}
+
+async function callProxy(msgs, isWelcome = false) {
+  const btn = document.getElementById('sendBtn');
+  btn.disabled = true;
+  const typingId = addTyping();
+
+  try {
+    const res = await fetch(proxyUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' }, // Apps Script requires text/plain to avoid CORS preflight
+      body: JSON.stringify({ system: SYSTEM_PROMPT, messages: msgs })
+    });
+
+    const data = await res.json();
+    removeTyping(typingId);
+
+    if (data.content && data.content[0]) {
+      const reply = data.content[0].text;
+      addMessage('assistant', reply);
+      if (!isWelcome) messages.push({ role: 'assistant', content: reply });
+      else messages = [];
+    } else if (data.error) {
+      addMessage('assistant', `⚠️ ${typeof data.error === 'string' ? data.error : data.error.message || 'Something went wrong.'}`);
+    }
+  } catch (err) {
+    removeTyping(typingId);
+    addMessage('assistant', '⚠️ Could not reach the proxy scroll. Double-check your Apps Script URL and make sure it is deployed as "Anyone" can access.');
+  }
+
+  btn.disabled = false;
+}
+
+function addMessage(role, text, imgHtml = '') {
+  const container = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = `message ${role}`;
+  const label = role === 'user' ? 'You' : '✦ The Grimoire';
+  div.innerHTML = `<div class="msg-label">${label}</div><div class="msg-bubble">${imgHtml}${escapeAndFormat(text)}</div>`;
+  container.appendChild(div);
+  scrollToBottom();
+}
+
+let typingCount = 0;
+function addTyping() {
+  const id = 'typing-' + (++typingCount);
+  const container = document.getElementById('messages');
+  const div = document.createElement('div');
+  div.className = 'message assistant';
+  div.id = id;
+  div.innerHTML = `<div class="msg-label">✦ The Grimoire</div><div class="msg-bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div>`;
+  container.appendChild(div);
+  scrollToBottom();
+  return id;
+}
+function removeTyping(id) {
+  const el = document.getElementById(id);
+  if (el) el.remove();
+}
+
+function scrollToBottom() {
+  const el = document.getElementById('chatScroll');
+  el.scrollTop = el.scrollHeight;
+}
+
+function escapeAndFormat(text) {
+  if (!text) return '';
+  return text
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g,'<em>$1</em>')
+    .replace(/\n\n/g,'</p><p>').replace(/\n/g,'<br>')
+    .replace(/^(.)/,'<p>$1').replace(/(.)$/,'$1</p>');
+}
+
+async function saveNotes() {
+  if (!proxyUrl || messages.length === 0) {
+    alert('Have a conversation first, then I can generate your session notes!');
+    return;
+  }
+  const panel = document.getElementById('notesPanel');
+  const area = document.getElementById('notesArea');
+  panel.classList.add('visible');
+  area.value = 'Consulting the ancient tomes…';
+
+  const notesMessages = [...messages, {
+    role: 'user',
+    content: 'Please write a short "Session Notes" summary of our conversation. Include: key world details, character names, story decisions made, and loose ends to explore next time. Format as bullet points under clear headings. Keep it concise — a journal entry.'
+  }];
+
+  try {
+    const res = await fetch(proxyUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ system: SYSTEM_PROMPT, messages: notesMessages })
+    });
+    const data = await res.json();
+    area.value = data.content?.[0]?.text || 'Could not generate notes.';
+  } catch {
+    area.value = 'Could not reach the proxy scroll.';
+  }
+}
+
+function clearChat() {
+  if (!confirm('Start a new quest? This will clear the current conversation.')) return;
+  messages = [];
+  document.getElementById('messages').innerHTML = '';
+  document.getElementById('emptyState').style.display = 'flex';
+  document.getElementById('notesPanel').classList.remove('visible');
+  document.getElementById('notesArea').value = '';
+  if (proxyUrl) kickoffWelcome();
+}
+</script>
+</body>
+</html>
